@@ -37,6 +37,10 @@ cp .env.local.example .env.local   # fill in real values when ready
 npm run dev                        # http://localhost:3000
 ```
 
+> **Going to production?** Follow the full step-by-step dashboard walkthrough
+> in [docs/PRODUCTION_SETUP.md](docs/PRODUCTION_SETUP.md) (Supabase → Vercel →
+> PayMongo → router), including a launch checklist.
+
 ## Supabase setup
 
 1. Create a project at [supabase.com](https://supabase.com).
