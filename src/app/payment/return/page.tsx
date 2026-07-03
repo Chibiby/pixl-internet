@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getPaymentByRef } from "@/lib/data";
+import { getPaymentById, getPaymentByRef } from "@/lib/data";
 
 export const metadata: Metadata = { title: "Payment status" };
 
@@ -21,11 +21,20 @@ export const metadata: Metadata = { title: "Payment status" };
 export default async function PaymentReturnPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ref?: string }>;
+  searchParams: Promise<{ ref?: string; pid?: string }>;
 }) {
-  const { ref } = await searchParams;
-  const payment = ref ? await getPaymentByRef(ref) : null;
+  const { ref, pid } = await searchParams;
+  const payment = pid
+    ? await getPaymentById(pid)
+    : ref
+      ? await getPaymentByRef(ref)
+      : null;
   const status = payment?.status ?? "pending";
+  const refreshHref = pid
+    ? `/payment/return?pid=${pid}`
+    : ref
+      ? `/payment/return?ref=${ref}`
+      : "/payment/return";
 
   const view =
     status === "paid"
@@ -62,9 +71,7 @@ export default async function PaymentReturnPage({
           <CardContent className="flex flex-col gap-2">
             {status === "pending" && (
               <Button asChild variant="outline">
-                <Link href={ref ? `/payment/return?ref=${ref}` : "/payment/return"}>
-                  Refresh status
-                </Link>
+                <Link href={refreshHref}>Refresh status</Link>
               </Button>
             )}
             <Button asChild className={status === "paid" ? "glow-green" : ""}>

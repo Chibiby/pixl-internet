@@ -13,7 +13,7 @@ function isSupabaseConfigured(): boolean {
   );
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Demo mode: no auth enforcement so the UI is fully browsable.
   if (!isSupabaseConfigured()) {
     return NextResponse.next();
