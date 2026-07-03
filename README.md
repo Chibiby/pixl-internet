@@ -17,10 +17,11 @@ PayMongo — with a dark neon gaming aesthetic to match the PIXL brand.
 - **Auth**: Google, Facebook, and email/password via Supabase, with a separate
   admin role enforced by proxy (middleware) + RLS
 - **Billing**: monthly due dates, overdue detection, PayMongo webhook that
-  marks payments paid, reactivates the client, and re-enables PPPoE
-- **Router bridge stub**: `POST /api/router/toggle` forwards
-  `{ pppoeUser, action }` to `BRIDGE_URL` (the MikroTik bridge on the VPS) —
-  a logged no-op until the bridge exists
+  marks payments paid, reactivates the client, and queues PPPoE re-enable
+- **Router sync (no VPS)**: the MikroTik router polls the `router-sync`
+  Supabase Edge Function over outbound HTTPS (works behind CGNAT), drains a
+  `commands` queue for enable/disable, and reports usage — see
+  [router/README.md](router/README.md)
 
 ## Demo mode
 
@@ -39,8 +40,9 @@ npm run dev                        # http://localhost:3000
 ## Supabase setup
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. In the SQL editor, run `supabase/migrations/0001_init.sql`, then
-   `supabase/seed.sql` (sample clients, payments, and usage).
+2. In the SQL editor, run `supabase/migrations/0001_init.sql` and
+   `supabase/migrations/0002_commands.sql`, then `supabase/seed.sql`
+   (sample clients, payments, and usage).
    Or with the CLI: `supabase db push` and `supabase db seed`.
 3. Copy the project URL and anon key into `.env.local`
    (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`), plus the
@@ -65,12 +67,19 @@ npm run dev                        # http://localhost:3000
 3. For local webhook testing, tunnel with `ngrok http 3000` and use the ngrok
    URL in the webhook config.
 
-## MikroTik bridge (later)
+## MikroTik router sync
 
-When the bridge service on the AWS VPS is ready, set `BRIDGE_URL` (and
-optionally `BRIDGE_API_KEY`). The app will POST
-`{ "pppoeUser": "...", "action": "enable" | "disable" }` to
-`<BRIDGE_URL>/pppoe/toggle`. Until then the route logs and no-ops.
+No VPS needed. Billing logic (webhook, admin toggle, overdue check) writes
+rows to the `commands` table; the router polls the `router-sync` Edge
+Function every 60 seconds to apply them and report usage:
+
+```bash
+supabase functions deploy router-sync --no-verify-jwt
+supabase secrets set ROUTER_SECRET=<long random string>
+```
+
+Then install `router/pixl-sync.rsc` on the router — full instructions in
+[router/README.md](router/README.md).
 
 ## Deploy to Vercel
 
@@ -94,14 +103,18 @@ Or import the GitHub repo at [vercel.com/new](https://vercel.com/new). Then:
 ```
 src/
   app/                 # routes: /, /login, /dashboard, /admin, /receipt/[id],
-                       # /payment/return, /api/{checkout,webhooks/paymongo,router/toggle}
+                       # /payment/return, /api/{checkout,webhooks/paymongo}
   components/          # UI: charts, tables, badges, admin CRUD dialogs
   lib/                 # supabase clients, data layer (+ demo fallback),
-                       # paymongo, bridge stub, formatting
+                       # paymongo, router command queue, formatting
   proxy.ts             # session refresh + route protection (Next 16 proxy)
 supabase/
-  migrations/          # schema + RLS policies
+  migrations/          # schema + RLS policies (incl. commands queue)
+  functions/           # router-sync Edge Function (router pull/confirm/report)
   seed.sql             # sample plans/clients/payments/usage
+router/
+  pixl-sync.rsc        # RouterOS v7 script (60s scheduler)
+  README.md            # router install + Edge Function deploy guide
 ```
 
 Replace `public/logo.png` with the final PIXL logo whenever ready.
