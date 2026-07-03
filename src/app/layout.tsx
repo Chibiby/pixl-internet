@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Orbitron } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { DemoModeBanner } from "@/components/demo-mode-banner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -43,6 +44,7 @@ export default function RootLayout({
       className={`dark ${geistSans.variable} ${geistMono.variable} ${orbitron.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col circuit-bg">
+        <DemoModeBanner />
         {children}
         <Toaster position="top-center" richColors />
       </body>
