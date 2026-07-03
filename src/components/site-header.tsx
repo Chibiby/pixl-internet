@@ -1,26 +1,11 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { getSessionInfo } from "@/lib/auth";
 import { SignOutButton } from "@/components/sign-out-button";
 
 export async function SiteHeader() {
-  let email: string | null = null;
-  let isAdmin = false;
-
-  if (isSupabaseConfigured()) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    email = user?.email ?? null;
-    isAdmin = user?.app_metadata?.role === "admin";
-  } else {
-    // Demo mode: show all nav so every page is reachable while building.
-    email = "demo@pixl.ph";
-    isAdmin = true;
-  }
+  const { email, role } = await getSessionInfo();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
@@ -32,7 +17,7 @@ export async function SiteHeader() {
               <Button asChild variant="ghost" size="sm">
                 <Link href="/dashboard">Dashboard</Link>
               </Button>
-              {isAdmin && (
+              {role === "admin" && (
                 <Button asChild variant="ghost" size="sm" className="text-neon-purple">
                   <Link href="/admin">Admin</Link>
                 </Button>

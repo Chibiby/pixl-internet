@@ -52,6 +52,41 @@ export async function getUsageForClient(clientId: string): Promise<UsageRow[]> {
   return (data as UsageRow[]) ?? [];
 }
 
+export async function getPaymentById(id: string): Promise<Payment | null> {
+  if (!isSupabaseConfigured()) {
+    return demoPayments.find((p) => p.id === id) ?? null;
+  }
+  const supabase = await createClient();
+  const { data } = await supabase.from("payments").select("*").eq("id", id).maybeSingle();
+  return (data as Payment | null) ?? null;
+}
+
+export async function getPaymentByRef(ref: string): Promise<Payment | null> {
+  if (!isSupabaseConfigured()) {
+    return demoPayments.find((p) => p.paymongo_ref === ref) ?? null;
+  }
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("payments")
+    .select("*")
+    .eq("paymongo_ref", ref)
+    .maybeSingle();
+  return (data as Payment | null) ?? null;
+}
+
+export async function getClientById(id: string): Promise<Client | null> {
+  if (!isSupabaseConfigured()) {
+    return demoClients.find((c) => c.id === id) ?? null;
+  }
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("clients")
+    .select(CLIENT_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+  return (data as Client | null) ?? null;
+}
+
 export async function getAllClients(): Promise<Client[]> {
   if (!isSupabaseConfigured()) return demoClients;
   const supabase = await createClient();
