@@ -130,6 +130,15 @@ export const demoPayments: Payment[] = [
     paymongo_ref: null,
     paid_at: new Date(Date.now() - 40 * 86400_000).toISOString(),
   },
+  {
+    id: "p1000000-0000-0000-0000-000000000006",
+    client_id: demoClients[4].id,
+    amount: 500,
+    method: "gcash",
+    status: "paid",
+    paymongo_ref: "cs_demo_005",
+    paid_at: new Date(Date.now() - 2 * 86400_000).toISOString(),
+  },
 ];
 
 /** 30 days of plausible usage for a client. */

@@ -105,7 +105,8 @@ export function AdminClientTable({
     if (!deleting) return;
     startTransition(async () => {
       const res = await deleteClient(deleting.id);
-      res.ok ? toast.success(res.message) : toast.error(res.message);
+      if (res.ok) toast.success(res.message);
+      else toast.error(res.message);
       setDeleting(null);
     });
   }
@@ -113,7 +114,8 @@ export function AdminClientTable({
   function onToggle(c: Client, enable: boolean) {
     startTransition(async () => {
       const res = await toggleConnection(c.id, c.pppoe_username, enable ? "enable" : "disable");
-      res.ok ? toast.success(res.message) : toast.error(res.message);
+      if (res.ok) toast.success(res.message);
+      else toast.error(res.message);
     });
   }
 

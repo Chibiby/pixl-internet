@@ -62,8 +62,9 @@ export function UsageCharts({ usage }: { usage: UsageRow[] }) {
         <TabsTrigger value="monthly">Monthly</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="daily" className="mt-4 h-64">
-        <ResponsiveContainer width="100%" height="100%">
+      <TabsContent value="daily" className="mt-4">
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={daily} margin={{ left: -12, right: 8, top: 8 }}>
             <defs>
               <linearGradient id="dl" x1="0" y1="0" x2="0" y2="1">
@@ -99,11 +100,13 @@ export function UsageCharts({ usage }: { usage: UsageRow[] }) {
               strokeWidth={2}
             />
           </AreaChart>
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        </div>
       </TabsContent>
 
-      <TabsContent value="monthly" className="mt-4 h-64">
-        <ResponsiveContainer width="100%" height="100%">
+      <TabsContent value="monthly" className="mt-4">
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
           <BarChart data={monthly} margin={{ left: -12, right: 8, top: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 8%)" />
             <XAxis dataKey="label" tick={{ fontSize: 11 }} />
@@ -116,7 +119,8 @@ export function UsageCharts({ usage }: { usage: UsageRow[] }) {
             <Bar dataKey="download" name="Download" fill={CYAN} radius={[4, 4, 0, 0]} />
             <Bar dataKey="upload" name="Upload" fill={PURPLE} radius={[4, 4, 0, 0]} />
           </BarChart>
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        </div>
       </TabsContent>
     </Tabs>
   );

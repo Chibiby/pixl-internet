@@ -13,7 +13,8 @@ export function Logo({ size = 40 }: { size?: number }) {
         alt="PIXL Internet Service"
         width={size * 1.8}
         height={size}
-        className="h-10 w-auto rounded-md object-cover"
+        className="rounded-md object-cover"
+        style={{ height: size, width: "auto" }}
         priority
       />
       <span className="font-heading text-lg font-bold tracking-widest text-glow-cyan hidden sm:inline">

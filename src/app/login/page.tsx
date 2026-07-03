@@ -155,7 +155,8 @@ export default function LoginPage() {
           alt="PIXL Internet Service"
           width={180}
           height={100}
-          className="h-24 w-auto rounded-lg"
+          className="rounded-lg"
+          style={{ height: 96, width: "auto" }}
           priority
         />
       </Link>
