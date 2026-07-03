@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
-import { togglePppoe, type BridgeAction } from "@/lib/bridge";
+import { enqueueRouterCommand, type RouterAction } from "@/lib/commands";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
@@ -60,32 +60,38 @@ export async function deleteClient(id: string): Promise<ActionResult> {
 
 /**
  * Enable/disable a client's PPPoE connection: updates status in the DB and
- * forwards the command to the (stubbed) MikroTik bridge.
+ * queues the command for the MikroTik router, which polls the router-sync
+ * Edge Function every ~60 seconds.
  */
 export async function toggleConnection(
   clientId: string,
   pppoeUsername: string,
-  action: BridgeAction,
+  action: RouterAction,
 ): Promise<ActionResult> {
   await requireAdmin();
 
-  const bridge = await togglePppoe(pppoeUsername, action);
-  if (!bridge.ok) return { ok: false, message: bridge.message };
-
-  if (isSupabaseConfigured()) {
-    const supabase = await createClient();
-    const { error } = await supabase
-      .from("clients")
-      .update({ status: action === "enable" ? "active" : "suspended" })
-      .eq("id", clientId);
-    if (error) return { ok: false, message: error.message };
-    revalidatePath("/admin");
+  if (!isSupabaseConfigured()) {
+    return {
+      ok: true,
+      message: `Demo mode: would queue ${action} for ${pppoeUsername}`,
+    };
   }
 
-  return {
-    ok: true,
-    message: bridge.stubbed
-      ? `${action === "enable" ? "Enabled" : "Disabled"} (bridge stubbed — no router call made)`
-      : bridge.message,
-  };
+  const supabase = await createClient();
+
+  const queued = await enqueueRouterCommand(supabase, {
+    clientId,
+    pppoeUsername,
+    action,
+  });
+  if (!queued.ok) return queued;
+
+  const { error } = await supabase
+    .from("clients")
+    .update({ status: action === "enable" ? "active" : "suspended" })
+    .eq("id", clientId);
+  if (error) return { ok: false, message: error.message };
+
+  revalidatePath("/admin");
+  return { ok: true, message: queued.message };
 }

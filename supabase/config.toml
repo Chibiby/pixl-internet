@@ -1,0 +1,5 @@
+# Supabase CLI project config (partial — only what this repo needs).
+
+# The router authenticates with ROUTER_SECRET, not a Supabase JWT.
+[functions.router-sync]
+verify_jwt = false

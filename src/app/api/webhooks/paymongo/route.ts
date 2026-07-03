@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { verifyWebhookSignature } from "@/lib/paymongo";
-import { togglePppoe } from "@/lib/bridge";
+import { enqueueRouterCommand } from "@/lib/commands";
 import type { PaymentMethod } from "@/lib/types";
 
 function detectMethod(sessionAttributes: Record<string, unknown>): PaymentMethod {
@@ -28,7 +28,8 @@ function nextDueDate(current: string): string {
 /**
  * PayMongo webhook. On checkout_session.payment.paid:
  * verify signature → mark payment paid → settle balance, set client Active,
- * advance due date → re-enable PPPoE via the (stubbed) router bridge.
+ * advance due date → queue an `enable` command that the MikroTik router
+ * picks up through the router-sync Edge Function.
  */
 export async function POST(request: Request) {
   const rawBody = await request.text();
@@ -109,8 +110,12 @@ export async function POST(request: Request) {
       })
       .eq("id", client.id);
 
-    // Re-enable the PPPoE connection (stubbed until the MikroTik bridge exists).
-    await togglePppoe(client.pppoe_username, "enable");
+    // Queue re-enabling the PPPoE connection for the router's next poll.
+    await enqueueRouterCommand(admin, {
+      clientId: client.id,
+      pppoeUsername: client.pppoe_username,
+      action: "enable",
+    });
   }
 
   return NextResponse.json({ received: true });
