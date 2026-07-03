@@ -1,0 +1,31 @@
+---
+description: PIXL Internet Service — stack, security constraints, and workflow for all changes
+alwaysApply: true
+---
+
+# PIXL Internet Service
+
+ISP client billing portal (Philippines, fiber-sharing). Next.js 16 App Router +
+TypeScript + Tailwind v4 + shadcn/ui, Supabase (DB/auth/Edge Functions),
+PayMongo (GCash/QR Ph), MikroTik RouterOS sync. Deployed on Vercel.
+
+## Architecture facts
+
+- `src/proxy.ts` is the Next 16 proxy (renamed from middleware) — do NOT create `middleware.ts`.
+- Demo mode: when Supabase env vars are placeholders, the data layer in `src/lib/data.ts` falls back to `src/lib/demo-data.ts` and auth is bypassed. Preserve this when adding data access.
+- Roles live in the `profiles` table (`client` | `admin`), enforced by RLS (`public.is_admin()`) and `src/proxy.ts`. Admin mutations go through server actions in `src/app/admin/actions.ts`.
+- Router control: no VPS bridge. The MikroTik router polls the Supabase Edge Function `supabase/functions/router-sync` (auth: `Authorization: Bearer ROUTER_SECRET`). The app enqueues rows into the `commands` table; never call routers directly from the app.
+- Router-facing JSON must stay flat (no nesting) — RouterOS `:deserialize` is fragile. Keep the RouterOS script in `router/pixl-sync.rsc` in sync with the Edge Function contract.
+- Money is Philippine pesos; always format with `formatPeso` from `src/lib/format.ts`.
+
+## Security rules
+
+- Never commit `.env.local` or real keys. `.env.local.example` holds placeholders only.
+- `SUPABASE_SERVICE_ROLE_KEY` and `ROUTER_SECRET` are server/function-side only. Never import `src/lib/supabase/admin.ts` from client components, and never send the service role key to the router.
+- Schema changes require a new numbered file in `supabase/migrations/` with RLS policies included — never edit applied migrations.
+- The PayMongo webhook (`src/app/api/webhooks/paymongo`) must keep verifying the `paymongo-signature` header before any DB writes.
+
+## Workflow
+
+- Before finishing any change: `npm run lint`, `npx tsc --noEmit`, `npm run build`.
+- Keep the dark neon design system: use tokens/utilities from `src/app/globals.css` (`neon-card`, `glow-*`, `text-glow-*`), mobile-first layouts.
